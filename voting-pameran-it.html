@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voting Stand Pameran – Teknik Informatika</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #020c1b 0%, #0a192f 60%, #020c1b 100%);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #ccd6f6;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(100,255,218,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(100,255,218,.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .container { max-width: 700px; margin: 0 auto; padding: 28px 16px; position: relative; z-index: 1; }
+
+    /* HEADER */
+    .header { text-align: center; margin-bottom: 28px; }
+    .badge {
+      display: inline-block;
+      background: rgba(100,255,218,.1); border: 1px solid rgba(100,255,218,.3);
+      color: #64ffda; padding: 4px 14px; border-radius: 20px;
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .title-wrap {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-bottom: 6px; cursor: default;
+    }
+    .title {
+      font-size: clamp(22px,5vw,34px); font-weight: 800;
+      background: linear-gradient(90deg,#64ffda,#a8edea,#64ffda);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .title-icon { color: #FFD700; flex-shrink: 0; }
+    .subtitle { color: #8892b0; font-size: 14px; }
+
+    /* CARD */
+    .card {
+      background: rgba(10,25,47,.85);
+      border: 1px solid rgba(100,255,218,.15);
+      border-radius: 16px; padding: 28px 24px;
+      backdrop-filter: blur(10px);
+      margin-bottom: 16px;
+    }
+
+    /* FORM */
+    label.field-label {
+      display: flex; align-items: center; gap: 6px;
+      color: #64ffda; font-size: 11px; letter-spacing: 1px;
+      text-transform: uppercase; font-weight: 600; margin-bottom: 10px;
+    }
+    input[type="text"] {
+      width: 100%; padding: 13px 16px;
+      background: rgba(100,255,218,.05);
+      border: 1.5px solid rgba(100,255,218,.25);
+      border-radius: 10px; color: #ccd6f6; font-size: 16px; outline: none;
+      transition: border-color .2s;
+    }
+    input[type="text"]:focus { border-color: #64ffda; }
+
+    .btn-primary {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg,#64ffda,#43e5f0);
+      border: none; border-radius: 10px;
+      color: #020c1b; font-weight: 800; font-size: 15px;
+      cursor: pointer; margin-top: 14px; letter-spacing: .5px;
+      transition: opacity .2s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      padding: 9px 18px;
+      background: transparent;
+      border: 1.5px solid rgba(100,255,218,.4);
+      border-radius: 8px; color: #64ffda; cursor: pointer;
+      font-size: 13px; font-weight: 600; transition: background .2s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-secondary:hover { background: rgba(100,255,218,.08); }
+
+    .btn-danger {
+      padding: 9px 18px;
+      background: transparent;
+      border: 1.5px solid rgba(255,100,100,.4);
+      border-radius: 8px; color: #ff6464; cursor: pointer;
+      font-size: 13px; font-weight: 600; transition: background .2s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-danger:hover { background: rgba(255,100,100,.08); }
+
+    /* STAND GRID */
+    .stand-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px,1fr));
+      gap: 10px; margin-top: 14px;
+    }
+    .stand-card {
+      padding: 16px 12px; border-radius: 12px; cursor: pointer; text-align: center;
+      background: rgba(100,255,218,.03);
+      border: 1.5px solid rgba(100,255,218,.1);
+      transition: all .2s; user-select: none;
+    }
+    .stand-card:hover { background: rgba(100,255,218,.07); border-color: rgba(100,255,218,.3); }
+    .stand-card.selected {
+      background: rgba(100,255,218,.15);
+      border: 2px solid #64ffda;
+      transform: scale(1.02);
+    }
+    .stand-card.selected .stand-icon-wrap { color: #64ffda; }
+    .stand-icon-wrap {
+      display: flex; align-items: center; justify-content: center;
+      color: #8892b0; margin-bottom: 8px;
+      transition: color .2s;
+    }
+    .stand-card:hover .stand-icon-wrap { color: #a8edea; }
+    .stand-name { font-size: 12px; font-weight: 700; color: #ccd6f6; margin-bottom: 3px; }
+    .stand-desc { font-size: 10px; color: #8892b0; line-height: 1.4; }
+
+    /* RESULT BARS */
+    .result-row { margin-bottom: 11px; }
+    .result-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .rank { font-size: 11px; width: 22px; text-align: center; flex-shrink: 0; color: #8892b0; }
+    .rank svg { display: block; margin: 0 auto; }
+    .r-icon-wrap { flex-shrink: 0; color: #8892b0; display: flex; align-items: center; }
+    .r-name {
+      font-size: 12px; font-weight: 600; flex: 1;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .r-name.my-vote { color: #64ffda; }
+    .r-count { font-size: 12px; color: #64ffda; font-weight: 700; min-width: 20px; text-align: right; flex-shrink: 0; }
+    .bar-wrap { padding-left: 30px; display: flex; align-items: center; gap: 8px; }
+    .bar-track {
+      flex: 1; height: 8px;
+      background: rgba(100,255,218,.08);
+      border-radius: 999px; overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg,#64ffda,#43e5f0);
+      transition: width .7s ease;
+    }
+    .bar-fill.gold   { background: linear-gradient(90deg,#FFD700,#FFA500); }
+    .bar-fill.silver { background: linear-gradient(90deg,#C0C0C0,#A0A0A0); }
+    .bar-fill.bronze { background: linear-gradient(90deg,#CD7F32,#A0522D); }
+    .bar-pct { font-size: 10px; color: #8892b0; min-width: 28px; }
+
+    /* WINNER BOX */
+    .winner-box {
+      background: rgba(255,215,0,.07);
+      border: 1px solid rgba(255,215,0,.25);
+      border-radius: 12px; padding: 14px;
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px;
+    }
+    .winner-crown { color: #FFD700; flex-shrink: 0; }
+    .winner-label { font-size: 11px; color: #FFD700; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+    .winner-name { font-weight: 800; font-size: 16px; color: #ccd6f6; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+    .winner-count { font-size: 12px; color: #8892b0; margin-top: 2px; }
+
+    /* SUCCESS */
+    .success-box {
+      text-align: center; padding: 20px;
+      background: rgba(100,255,218,.07);
+      border: 1px solid rgba(100,255,218,.2);
+      border-radius: 12px; margin-bottom: 16px;
+    }
+    .success-icon { display: flex; justify-content: center; color: #64ffda; }
+    .success-box .msg { font-weight: 700; color: #64ffda; margin-top: 8px; }
+    .success-box .sub { font-size: 13px; color: #8892b0; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+    /* VOTER LIST */
+    .voter-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0; border-bottom: 1px solid rgba(100,255,218,.06);
+    }
+    .voter-item:last-child { border-bottom: none; }
+    .voter-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(100,255,218,.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: #64ffda; font-weight: 700; flex-shrink: 0;
+    }
+    .voter-info { margin-left: 10px; }
+    .voter-name { font-size: 12px; font-weight: 600; }
+    .voter-stand { font-size: 11px; color: #8892b0; display: flex; align-items: center; gap: 4px; margin-top: 1px; }
+    .voter-time { font-size: 11px; color: #8892b0; display: flex; align-items: center; gap: 4px; }
+
+    /* MISC */
+    .section-title { font-weight: 700; font-size: 15px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .helper { color: #8892b0; font-size: 13px; margin-top: 6px; }
+    .row-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .choice-preview {
+      margin-top: 14px; padding: 12px;
+      background: rgba(100,255,218,.07); border-radius: 8px;
+      text-align: center; font-size: 13px; color: #64ffda;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .footer { text-align: center; margin-top: 24px; font-size: 11px; color: rgba(136,146,176,.4); }
+    .btn-row { display: flex; gap: 10px; margin-top: 12px; }
+    .hidden { display: none !important; }
+    .greet { display: flex; align-items: center; gap: 6px; color: #64ffda; font-size: 13px; margin-bottom: 4px; }
+
+    /* ADMIN */
+    .admin-card { border-color: rgba(255,100,100,.3) !important; }
+    .admin-title { color: #ff6464; font-weight: 700; margin-bottom: 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+
+    /* rank medals */
+    .medal-1 { color: #FFD700; }
+    .medal-2 { color: #C0C0C0; }
+    .medal-3 { color: #CD7F32; }
+
+    .check-mark { color: #64ffda; margin-left: 4px; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="badge">HMTI · Pameran 2025</div>
+    <div class="title-wrap" id="titleEl">
+      <i data-lucide="trophy" class="title-icon" width="30" height="30"></i>
+      <h1 class="title">Vote Stand Terbaik</h1>
+    </div>
+    <p class="subtitle">Pilih stand pameran Teknik Informatika favoritmu!</p>
+  </div>
+
+  <!-- PAGE: HOME -->
+  <div id="pageHome">
+    <div class="card">
+      <label class="field-label" for="nameInput">
+        <i data-lucide="user" width="14" height="14"></i>
+        Nama Kamu
+      </label>
+      <input type="text" id="nameInput" placeholder="Masukkan nama lengkap..." autocomplete="off" />
+      <button class="btn-primary" onclick="handleStart()">
+        <i data-lucide="log-in" width="18" height="18"></i>
+        Mulai Voting
+      </button>
+      <div style="text-align:center;margin-top:14px;">
+        <button class="btn-secondary" onclick="showResult(null)">
+          <i data-lucide="bar-chart-2" width="14" height="14"></i>
+          Lihat Hasil Voting
+        </button>
+      </div>
+      <p class="helper" style="text-align:center;margin-top:14px;">
+        Total pemilih: <span id="homeCount" style="color:#64ffda;font-weight:700;">0</span> orang
+      </p>
+    </div>
+  </div>
+
+  <!-- PAGE: VOTE -->
+  <div id="pageVote" class="hidden">
+    <div class="card">
+      <div class="greet" id="greetMsg"></div>
+      <p style="color:#8892b0;font-size:13px;margin-bottom:0;">Pilih 1 stand yang paling keren menurutmu:</p>
+      <div class="stand-grid" id="standGrid"></div>
+      <div class="choice-preview hidden" id="choicePreview"></div>
+      <button class="btn-primary" id="submitBtn" onclick="handleVote()" disabled>
+        <i data-lucide="check-circle" width="18" height="18"></i>
+        Submit Vote Saya
+      </button>
+      <div style="text-align:center;margin-top:12px;">
+        <button class="btn-secondary" onclick="goHome()">
+          <i data-lucide="arrow-left" width="14" height="14"></i>
+          Kembali
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: RESULT -->
+  <div id="pageResult" class="hidden">
+    <div id="successBox" class="success-box hidden">
+      <div class="success-icon"><i data-lucide="check-circle-2" width="36" height="36"></i></div>
+      <div class="msg">Vote berhasil dicatat!</div>
+      <div class="sub" id="successSub"></div>
+    </div>
+
+    <div class="card">
+      <div class="row-between">
+        <div>
+          <div class="section-title" style="margin-bottom:2px;">
+            <i data-lucide="bar-chart-2" width="16" height="16" style="color:#64ffda"></i>
+            Hasil Voting
+          </div>
+          <div style="color:#8892b0;font-size:12px;">Live · <span id="totalCount">0</span> pemilih</div>
+        </div>
+        <button class="btn-secondary" onclick="goHome()">
+          <i data-lucide="refresh-ccw" width="13" height="13"></i>
+          Vote Lagi
+        </button>
+      </div>
+
+      <div class="winner-box hidden" id="winnerBox">
+        <div class="winner-crown"><i data-lucide="crown" width="32" height="32"></i></div>
+        <div>
+          <div class="winner-label">Sementara Memimpin</div>
+          <div class="winner-name" id="winnerName"></div>
+          <div class="winner-count" id="winnerCount"></div>
+        </div>
+      </div>
+
+      <div id="barChart"></div>
+    </div>
+
+    <div class="card hidden" id="voterListCard">
+      <div class="section-title" style="color:#64ffda;">
+        <i data-lucide="clock" width="15" height="15"></i>
+        Pemilih Terbaru
+      </div>
+      <div id="voterList"></div>
+    </div>
+
+    <div class="card hidden admin-card" id="adminCard">
+      <div class="admin-title">
+        <i data-lucide="settings" width="14" height="14"></i>
+        Admin Panel
+      </div>
+      <div class="btn-row">
+        <button class="btn-danger" onclick="resetData()">
+          <i data-lucide="trash-2" width="14" height="14"></i>
+          Reset Semua Data
+        </button>
+        <button class="btn-secondary" onclick="document.getElementById('adminCard').classList.add('hidden')">
+          <i data-lucide="x" width="13" height="13"></i>
+          Tutup
+        </button>
+      </div>
+      <p style="margin-top:12px;font-size:11px;color:#8892b0;" id="adminInfo"></p>
+    </div>
+  </div>
+
+  <div class="footer">Sistem Voting Digital · Teknik Informatika</div>
+</div>
+
+<script>
+  // ── DATA ────────────────────────────────────────────────────────────────────
+  // icon: Lucide icon name
+  const STANDS = [
+    { id:1,  name:"Artificial Intelligence", icon:"brain",        desc:"Machine Learning & Deep Learning" },
+    { id:2,  name:"Cybersecurity",            icon:"shield",       desc:"Ethical Hacking & Network Security" },
+    { id:3,  name:"Internet of Things",       icon:"wifi",         desc:"Smart Devices & Embedded Systems" },
+    { id:4,  name:"Web Development",          icon:"globe",        desc:"Full Stack & Modern Frameworks" },
+    { id:5,  name:"Mobile App Dev",           icon:"smartphone",   desc:"Android, iOS & Cross-Platform" },
+    { id:6,  name:"Game Development",         icon:"gamepad-2",    desc:"Unity, Unreal & Indie Games" },
+    { id:7,  name:"Data Science",             icon:"database",     desc:"Big Data & Analytics" },
+    { id:8,  name:"Cloud Computing",          icon:"cloud",        desc:"AWS, GCP & Azure Solutions" },
+    { id:9,  name:"Blockchain",               icon:"link",         desc:"DeFi, NFT & Smart Contracts" },
+    { id:10, name:"AR / VR",                  icon:"glasses",      desc:"Augmented & Virtual Reality" },
+    { id:11, name:"Robotics",                 icon:"bot",          desc:"Autonomous Systems & Drones" },
+    { id:12, name:"UI/UX Design",             icon:"pen-tool",     desc:"User Experience & Prototyping" },
+  ];
+
+  const LS_KEY = "voting_pameran_it";
+
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return { votes: {}, voters: [] };
+  }
+
+  function saveData(data) {
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }
+
+  // helper: render lucide icon as SVG string
+  function icon(name, size = 16, extraClass = "") {
+    return `<i data-lucide="${name}" width="${size}" height="${size}" class="${extraClass}"></i>`;
+  }
+
+  // ── STATE ───────────────────────────────────────────────────────────────────
+  let currentName = "";
+  let selectedId  = null;
+  let myVotedId   = null;
+  let adminTaps   = 0;
+  let adminTimer  = null;
+
+  // ── PAGES ───────────────────────────────────────────────────────────────────
+  function showPage(name) {
+    ["pageHome","pageVote","pageResult"].forEach(id =>
+      document.getElementById(id).classList.add("hidden")
+    );
+    document.getElementById("page" + name).classList.remove("hidden");
+    lucide.createIcons();
+  }
+
+  function goHome() {
+    document.getElementById("nameInput").value = "";
+    currentName = ""; selectedId = null; myVotedId = null;
+    refreshHomeCount();
+    showPage("Home");
+    document.getElementById("nameInput").focus();
+  }
+
+  // ── HOME ────────────────────────────────────────────────────────────────────
+  function refreshHomeCount() {
+    const d = loadData();
+    document.getElementById("homeCount").textContent = d.voters.length;
+  }
+
+  document.getElementById("nameInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") handleStart();
+  });
+
+  function handleStart() {
+    const name = document.getElementById("nameInput").value.trim();
+    if (!name) { document.getElementById("nameInput").focus(); return; }
+    currentName = name;
+
+    const d = loadData();
+    const existing = d.voters.find(v => v.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      myVotedId = existing.standId;
+      showResult(null);
+      return;
+    }
+    buildStandGrid();
+    const greet = document.getElementById("greetMsg");
+    greet.innerHTML = `${icon("hand-wave",14)} Halo, <strong style="margin-left:3px">${name}</strong>!`;
+    selectedId = null;
+    document.getElementById("submitBtn").disabled = true;
+    document.getElementById("choicePreview").classList.add("hidden");
+    showPage("Vote");
+  }
+
+  // ── VOTE PAGE ───────────────────────────────────────────────────────────────
+  function buildStandGrid() {
+    const grid = document.getElementById("standGrid");
+    grid.innerHTML = "";
+    STANDS.forEach(s => {
+      const div = document.createElement("div");
+      div.className = "stand-card";
+      div.id = "sc_" + s.id;
+      div.innerHTML = `
+        <div class="stand-icon-wrap">${icon(s.icon, 26)}</div>
+        <div class="stand-name">${s.name}</div>
+        <div class="stand-desc">${s.desc}</div>
+      `;
+      div.onclick = () => selectStand(s.id);
+      grid.appendChild(div);
+    });
+    lucide.createIcons();
+  }
+
+  function selectStand(id) {
+    if (selectedId !== null) {
+      document.getElementById("sc_" + selectedId)?.classList.remove("selected");
+    }
+    selectedId = id;
+    document.getElementById("sc_" + id).classList.add("selected");
+    document.getElementById("submitBtn").disabled = false;
+
+    const stand = STANDS.find(s => s.id === id);
+    const preview = document.getElementById("choicePreview");
+    preview.classList.remove("hidden");
+    preview.innerHTML = `${icon(stand.icon,14)} Pilihanmu: <strong>${stand.name}</strong>`;
+    lucide.createIcons();
+  }
+
+  function handleVote() {
+    if (!selectedId) return;
+    const btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.innerHTML = `${icon("loader",18)} Menyimpan...`;
+    lucide.createIcons();
+
+    const d = loadData();
+    d.votes[selectedId] = (d.votes[selectedId] || 0) + 1;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("id-ID", { hour:"2-digit", minute:"2-digit" });
+    d.voters.push({ name: currentName, standId: selectedId, time: timeStr });
+    saveData(d);
+    myVotedId = selectedId;
+    showResult(selectedId);
+  }
+
+  // ── RESULT PAGE ─────────────────────────────────────────────────────────────
+  function showResult(votedId) {
+    const d = loadData();
+    const total = d.voters.length;
+    const votes = d.votes || {};
+
+    // success box
+    const sb = document.getElementById("successBox");
+    if (votedId !== null) {
+      const stand = STANDS.find(s => s.id === votedId);
+      sb.classList.remove("hidden");
+      document.getElementById("successSub").innerHTML =
+        `Kamu memilih: ${icon(stand.icon,13)} <strong style="color:#ccd6f6;margin-left:2px">${stand.name}</strong>`;
+    } else {
+      sb.classList.add("hidden");
+    }
+
+    document.getElementById("totalCount").textContent = total;
+
+    // sort stands
+    const sorted = [...STANDS].sort((a,b) => (votes[b.id]||0) - (votes[a.id]||0));
+    const maxV = Math.max(...sorted.map(s => votes[s.id]||0), 1);
+
+    // winner
+    const wb = document.getElementById("winnerBox");
+    if (total > 0) {
+      wb.classList.remove("hidden");
+      const w = sorted[0];
+      document.getElementById("winnerName").innerHTML =
+        `${icon(w.icon, 16)} ${w.name}`;
+      document.getElementById("winnerCount").textContent = `${votes[w.id]||0} suara`;
+    } else {
+      wb.classList.add("hidden");
+    }
+
+    // bar chart
+    const chart = document.getElementById("barChart");
+    chart.innerHTML = "";
+    const barColors = ["gold","silver","bronze"];
+    const medalIcons = ["medal","medal","medal"];
+    const medalClasses = ["medal-1","medal-2","medal-3"];
+
+    sorted.forEach((s, i) => {
+      const count = votes[s.id] || 0;
+      const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
+      const widthPct = total > 0 ? (count / maxV * 100) : 0;
+      const isTop3   = i < 3;
+      const isMyVote = myVotedId === s.id;
+
+      const rankHtml = isTop3
+        ? `<span class="${medalClasses[i]}">${icon("medal", 15)}</span>`
+        : `<span style="font-size:11px;color:#8892b0">${i+1}</span>`;
+
+      const row = document.createElement("div");
+      row.className = "result-row";
+      row.innerHTML = `
+        <div class="result-meta">
+          <span class="rank">${rankHtml}</span>
+          <span class="r-icon-wrap">${icon(s.icon, 14)}</span>
+          <span class="r-name${isMyVote?" my-vote":""}">${s.name}${isMyVote?` <span class="check-mark">${icon("check",12)}</span>`:""}</span>
+          <span class="r-count">${count}</span>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-track">
+            <div class="bar-fill${isTop3?" "+barColors[i]:""}" style="width:${widthPct}%"></div>
+          </div>
+          <span class="bar-pct">${pct}%</span>
+        </div>
+      `;
+      chart.appendChild(row);
+    });
+
+    // voter list
+    const vlCard = document.getElementById("voterListCard");
+    const vl     = document.getElementById("voterList");
+    if (d.voters.length > 0) {
+      vlCard.classList.remove("hidden");
+      vl.innerHTML = "";
+      [...d.voters].reverse().slice(0, 8).forEach(v => {
+        const stand = STANDS.find(s => s.id === v.standId);
+        const item = document.createElement("div");
+        item.className = "voter-item";
+        item.innerHTML = `
+          <div style="display:flex;align-items:center;gap:0">
+            <div class="voter-avatar">${v.name.charAt(0).toUpperCase()}</div>
+            <div class="voter-info">
+              <div class="voter-name">${v.name}</div>
+              <div class="voter-stand">${icon(stand?.icon||"layout",12)} ${stand?.name||""}</div>
+            </div>
+          </div>
+          <div class="voter-time">${icon("clock",11)} ${v.time}</div>
+        `;
+        vl.appendChild(item);
+      });
+    } else {
+      vlCard.classList.add("hidden");
+    }
+
+    showPage("Result");
+  }
+
+  // ── ADMIN ───────────────────────────────────────────────────────────────────
+  document.getElementById("titleEl").addEventListener("click", () => {
+    adminTaps++;
+    clearTimeout(adminTimer);
+    if (adminTaps >= 5) {
+      adminTaps = 0;
+      const card = document.getElementById("adminCard");
+      card.classList.remove("hidden");
+      const d = loadData();
+      document.getElementById("adminInfo").textContent =
+        `Total data: ${d.voters.length} voter · localStorage key: "${LS_KEY}"`;
+      lucide.createIcons();
+    } else {
+      adminTimer = setTimeout(() => adminTaps = 0, 2000);
+    }
+  });
+
+  function resetData() {
+    if (!confirm("Reset semua data voting? Ini tidak bisa dibatalkan!")) return;
+    localStorage.removeItem(LS_KEY);
+    document.getElementById("adminCard").classList.add("hidden");
+    goHome();
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────────────────────
+  refreshHomeCount();
+  showPage("Home");
+  document.getElementById("nameInput").focus();
+</script>
+</body>
+</html>
